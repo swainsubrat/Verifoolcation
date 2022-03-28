@@ -6,37 +6,41 @@ from PIL import Image
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 base_img_dir = "img/celebs/"
-base_save_dir = "img/processed/"
+# base_img_dir = "img_large/"
 base_compare_dir = "img/non_celebs/"
 images = [base_img_dir+x for x in os.listdir(base_img_dir)]
 
-# If required, create a face detection pipeline using MTCNN:
+# Face detection pipeline using MTCNN
 mtcnn = MTCNN()
 
-# Create an inception resnet (in eval mode):
+# Create an inception resnet (in eval mode)
 resnet = InceptionResnetV1(pretrained='vggface2').eval()
 
 
 def create_embedding(filepath):
     """
-    Calculate and store embedding for the first time
+    Calculate and store embeddings of celebrities
+    (just needed to be run once)
     """
     embeddings = []
+    count = 0
     for image in images:
         img = Image.open(image)
-
+    
         # Get cropped and prewhitened image tensor
-        filename = image.split("/")[-1]
-        img_cropped = mtcnn(img, save_path=base_save_dir+filename)
+        img_cropped = mtcnn(img)
 
-        # Calculate embedding (unsqueeze to add batch dimension)
-        img_embedding = resnet(img_cropped.unsqueeze(0))
-        embeddings.append([
-            image, img_embedding
-        ])
+        if img_cropped is not None:
 
-    # df = pd.DataFrame(embeddings)
-    # df.to_csv(filepath)
+            # Calculate embedding (unsqueeze to add batch dimension)
+            img_embedding = resnet(img_cropped.unsqueeze(0))
+            embeddings.append([
+                image, img_embedding
+            ])
+        count += 1
+        if count % 100 == 0:
+            print(f"{count} images done!!!")
+
     with open(filepath, "wb") as f:
         pickle.dump(embeddings, f)
 
