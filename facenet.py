@@ -1,3 +1,6 @@
+"""
+Generate and store facenet embeddings
+"""
 import os
 import torch
 import pickle
